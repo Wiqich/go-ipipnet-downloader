@@ -1,4 +1,7 @@
 # go-ipipnet-downloader
+
+[![Build Status](https://travis-ci.org/yangchenxing/go-ipipnet-downloader.svg?branch=master)](https://travis-ci.org/yangchenxing/go-ipipnet-downloader)
+
 go-ipipnet-downloader用于下载ipip.net提供的数据文件、监控和通知文件更新
 
 ## Installation
