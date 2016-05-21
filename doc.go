@@ -1,10 +1,7 @@
-# go-ipipnet-downloader
-go-ipipnet-downloader用于下载ipip.net提供的数据文件、监控和通知文件更新
+/*
+go-ipipnet-downloader提供针对ipip.net网站的数据下载器，支持数据文件本地或远程的更新监控和更新通知
 
-## Installation
-    go get -u github.com/yangchenxing/go-ipipnet-downloader
-
-## Example
+Example:
 
     d := &Downloader{
         LocalPath: "data/mydata4vipweek2.dat",
@@ -15,3 +12,6 @@ go-ipipnet-downloader用于下载ipip.net提供的数据文件、监控和通知
     }
     d.EnsureLocal()
     go d.StartWatch()
+*/
+
+package downloader

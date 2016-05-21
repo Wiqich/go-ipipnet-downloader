@@ -16,21 +16,27 @@ var (
 )
 
 // Downloader 用于下载IPIPNet提供的数据文件、检查和通知文件更新
-// LocalPath:      必须的本地文件路径，对应ETag文件被保存在LocalPath+".etag";
-// RemoteURL:      可选的远程下载地址，此字段为空时将监控本地文件修改，非空时监控远程文件ETag变化
-// Interval:       监控周期
-// CheckETag:      是否检查远程下载中的ETag字段，若远程下载服务器出现异常导致缺少ETag字段，可将此字段设置为false以退化为周期性强制更新
-// ErrorCallback:  错误事件回调函数，参数为错误对象
-// UpdateCallback: 更新事件回调函数，参数为数据文件路径
 type Downloader struct {
-	LocalPath      string
-	RemoteURL      string
-	Interval       time.Duration
-	CheckETag      bool
-	ErrorCallback  func(error)
+	// 必须的本地文件路径，对应ETag文件被保存在LocalPath+".etag"
+	LocalPath string
+
+	// 可选的远程下载地址，此字段为空时将监控本地文件修改，非空时监控远程文件ETag变化
+	RemoteURL string
+
+	// 监控周期
+	Interval time.Duration
+
+	// 是否检查远程下载中的ETag字段，若远程下载服务器出现异常导致缺少ETag字段，可将此字段设置为false以退化为周期性强制更新
+	CheckETag bool
+
+	// 错误事件回调函数，参数为错误对象
+	ErrorCallback func(error)
+
+	// 更新事件回调函数，参数为数据文件路径
 	UpdateCallback func(string)
-	etag           string
-	watching       bool
+
+	etag     string
+	watching bool
 }
 
 // EnsureLocal 用于在首次加载前确保本地文件存在
