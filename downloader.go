@@ -12,6 +12,7 @@ import (
 
 var (
 	errNotModified  = errors.New("not modified")
+	errNoETag       = errors.New("no etag")
 	defaultInterval = time.Hour
 )
 
@@ -85,7 +86,6 @@ func (d *Downloader) watchLocal() {
 		if err != nil {
 			d.onError(err)
 		} else if info.ModTime().After(ts) {
-			fmt.Println("call update")
 			d.onUpdate()
 		}
 		time.Sleep(interval)
@@ -122,33 +122,57 @@ func (d *Downloader) onUpdate() {
 
 }
 
+func (d *Downloader) checkRemoteModification() (bool, error) {
+	resp, err := http.Head(d.RemoteURL)
+	if err != nil {
+		return true, err
+	}
+	defer resp.Body.Close()
+	etag := resp.Header.Get("ETag")
+	if etag == "" {
+		return true, errNoETag
+	}
+	return d.etag != etag, nil
+}
+
 func (d *Downloader) download() error {
 	if d.RemoteURL == "" {
 		return errors.New("remote url is unset")
 	}
+	// check remote modification first
+	if d.CheckETag {
+		if modified, err := d.checkRemoteModification(); err != nil {
+			return fmt.Errorf("check remote modification fail:", err.Error())
+		} else if !modified {
+			return errNotModified
+		}
+	}
+	// download remote content
 	resp, err := http.Get(d.RemoteURL)
 	if err != nil {
 		return fmt.Errorf("download fail: %s", err.Error())
 	}
+	defer resp.Body.Close()
 	if !d.CheckETag {
 		if err := saveStreamToFile(resp.Body, d.LocalPath); err != nil {
 			return fmt.Errorf("save local file fail: %s", err.Error())
 		}
 		return nil
 	}
-	etag := resp.Header.Get("ETag")
-	if etag == "" {
-		return fmt.Errorf("download fail: no etag")
-	}
-	if etag == d.etag {
-		return errNotModified
-	}
+	// do not check etag while checkRemoteModification returns true
+	// if etag == "" {
+	// 	return fmt.Errorf("download fail: no etag")
+	// }
+	// if etag == d.etag {
+	// 	return errNotModified
+	// }
 	if err := saveStreamToFile(resp.Body, d.LocalPath); err != nil {
 		return fmt.Errorf("save local file fail: %s", err.Error())
 	}
-	if err := ioutil.WriteFile(d.LocalPath+".etag", []byte(etag), 0755); err != nil {
+	if err := ioutil.WriteFile(d.LocalPath+".etag", []byte(resp.Header.Get("ETag")), 0755); err != nil {
 		return fmt.Errorf("save local etag file fail: %s", err.Error())
 	}
+	d.etag = resp.Header.Get("ETag")
 	return nil
 }
 
