@@ -3,7 +3,6 @@ package downloader
 import (
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -153,13 +152,11 @@ func (d *Downloader) download() error {
 		return fmt.Errorf("download fail: %s", err.Error())
 	}
 	defer resp.Body.Close()
-	if !d.CheckETag {
-		if err := saveStreamToFile(resp.Body, d.LocalPath); err != nil {
-			return fmt.Errorf("save local file fail: %s", err.Error())
-		}
-		return nil
-	}
-	if err := saveStreamToFile(resp.Body, d.LocalPath); err != nil {
+    content, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        return fmt.Errorf("read response body fail: %s", err.Error())
+    }
+	if err := ioutil.WriteFile(d.LocalPath, content, 0755); err != nil {
 		return fmt.Errorf("save local file fail: %s", err.Error())
 	}
 	if err := ioutil.WriteFile(d.LocalPath+".etag", []byte(resp.Header.Get("ETag")), 0755); err != nil {
@@ -168,3 +165,4 @@ func (d *Downloader) download() error {
 	d.etag = resp.Header.Get("ETag")
 	return nil
 }
+
