@@ -159,13 +159,6 @@ func (d *Downloader) download() error {
 		}
 		return nil
 	}
-	// do not check etag while checkRemoteModification returns true
-	// if etag == "" {
-	// 	return fmt.Errorf("download fail: no etag")
-	// }
-	// if etag == d.etag {
-	// 	return errNotModified
-	// }
 	if err := saveStreamToFile(resp.Body, d.LocalPath); err != nil {
 		return fmt.Errorf("save local file fail: %s", err.Error())
 	}
@@ -173,21 +166,5 @@ func (d *Downloader) download() error {
 		return fmt.Errorf("save local etag file fail: %s", err.Error())
 	}
 	d.etag = resp.Header.Get("ETag")
-	return nil
-}
-
-func saveStreamToFile(r io.Reader, path string) error {
-	tempPath := path + ".tmp"
-	file, err := os.OpenFile(tempPath, os.O_WRONLY|os.O_CREATE, 0755)
-	if err != nil {
-		return fmt.Errorf("open temp file %q fail: %s", tempPath, err.Error())
-	}
-	if _, err := io.Copy(file, r); err != nil {
-		file.Close()
-		os.Remove(tempPath)
-		return fmt.Errorf("copy stream to temp file %q fail: %s", tempPath, err.Error())
-	}
-	file.Close()
-	os.Rename(tempPath, path)
 	return nil
 }
