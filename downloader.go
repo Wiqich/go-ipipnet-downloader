@@ -135,7 +135,7 @@ func (d *Downloader) download() error {
 	// check remote modification first
 	if d.CheckETag {
 		if modified, err := d.checkRemoteModification(); err != nil {
-			return fmt.Errorf("check remote modification fail:", err.Error())
+			return fmt.Errorf("check remote modification fail: %s", err.Error())
 		} else if !modified {
 			return errNotModified
 		}
