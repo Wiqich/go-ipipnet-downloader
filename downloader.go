@@ -10,9 +10,8 @@ import (
 )
 
 var (
-	errNotModified  = errors.New("not modified")
-	errNoETag       = errors.New("no etag")
-	defaultInterval = time.Hour
+	errNotModified = errors.New("not modified")
+	errNoETag      = errors.New("no etag")
 )
 
 // Downloader 用于下载IPIPNet提供的数据文件、检查和通知文件更新
@@ -59,6 +58,9 @@ func (d *Downloader) EnsureLocal() error {
 
 // StartWatch 开始监控数据文件变化
 func (d *Downloader) StartWatch() {
+	if d.Interval <= 0 {
+		return
+	}
 	d.watching = true
 	if d.RemoteURL == "" {
 		go d.watchLocal()
@@ -73,13 +75,9 @@ func (d *Downloader) StopWatch() {
 }
 
 func (d *Downloader) watchLocal() {
-	interval := d.Interval
-	if interval == 0 {
-		interval = defaultInterval
-	}
 	info, _ := os.Stat(d.LocalPath)
 	ts := info.ModTime()
-	time.Sleep(interval)
+	time.Sleep(d.Interval)
 	for d.watching {
 		info, err := os.Stat(d.LocalPath)
 		if err != nil {
@@ -87,15 +85,11 @@ func (d *Downloader) watchLocal() {
 		} else if info.ModTime().After(ts) {
 			d.onUpdate()
 		}
-		time.Sleep(interval)
+		time.Sleep(d.Interval)
 	}
 }
 
 func (d *Downloader) watchRemote() {
-	interval := d.Interval
-	if interval == 0 {
-		interval = defaultInterval
-	}
 	for d.watching {
 		if err := d.download(); err == errNotModified {
 			// do nothing
@@ -104,7 +98,7 @@ func (d *Downloader) watchRemote() {
 		} else {
 			d.onUpdate()
 		}
-		time.Sleep(interval)
+		time.Sleep(d.Interval)
 	}
 }
 
@@ -152,10 +146,10 @@ func (d *Downloader) download() error {
 		return fmt.Errorf("download fail: %s", err.Error())
 	}
 	defer resp.Body.Close()
-    content, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-        return fmt.Errorf("read response body fail: %s", err.Error())
-    }
+	content, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("read response body fail: %s", err.Error())
+	}
 	if err := ioutil.WriteFile(d.LocalPath, content, 0755); err != nil {
 		return fmt.Errorf("save local file fail: %s", err.Error())
 	}
@@ -165,4 +159,3 @@ func (d *Downloader) download() error {
 	d.etag = resp.Header.Get("ETag")
 	return nil
 }
-
