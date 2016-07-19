@@ -149,3 +149,15 @@ func TestWatchLocal(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestNoWatch(t *testing.T) {
+	d := &Downloader{
+		Interval: 0,
+	}
+	d.StartWatch()
+	time.Sleep(time.Microsecond * 100)
+	if d.watching {
+		t.Error("unexpected watching status")
+		return
+	}
+}
